@@ -1,0 +1,38 @@
+#!/bin/bash -uex
+#sudo apt-get update
+#sudo apt-get dist-upgrade -y
+
+echo "golang-go       golang-go/dashboard     boolean false" | sudo debconf-set-selections
+
+export DEBIAN_FRONTEND=noninteractive
+sudo apt-get install -y ruby1.9.1 ruby1.9.1-dev golang git curl
+
+rsync -Pa /vagrant/root /tmp/
+
+if [ "$1" = "dev" ]; then
+	sudo gem install fpm --no-rdoc --no-ri
+
+	export GOPATH=$HOME/go
+	go get -v github.com/brimstone/helixdns
+	cd $GOPATH/src/github.com/brimstone/helixdns
+	go build cmd/hdns/hdns.go && cp hdns /tmp/root/usr/sbin/helixdns
+
+	VERSION="$(cd $GOPATH/src/github.com/brimstone/helixdns; git describe --always --tags | sed -e 's/^v//')"
+
+elif [ "$1" = "stable" ]; then
+
+	cd /tmp
+	# Download stable
+	releasepath=$(curl https://github.com/brimstone/helixdns/releases | grep linux-amd64.tar.gz | head -n 1 | sed -e 's/^.*"\///;s/".*//')
+	curl -LO https://github.com/$releasepath
+	tar -zxvf *.tar.gz
+	cp etc*/helixdns /tmp/root/usr/sbin/
+	VERSION=$(/tmp/root/usr/sbin/helixdns -version | awk '{print $NF}' | sed -e 's/^v//')
+	VERSION="$VERSION-$(cd /vagrant; git log --oneline | wc -l)-$(cd /vagrant; git describe --always --tags)"
+
+fi
+
+cd /tmp
+fpm -t deb -s dir -n helixdns -v $VERSION -C root --config-files etc/default/helixdns .
+
+cp *.deb /vagrant/out

@@ -1,0 +1,47 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          helixdns
+# Required-Start:    network
+# Required-Stop:
+# Should-Start:      
+# Should-Stop:       
+# X-Start-Before:    
+# X-Stop-After:      
+# Default-Start:     S
+# Default-Stop:
+### END INIT INFO
+
+SCRIPTNAME=/etc/init.d/helixdns
+
+. /lib/lsb/init-functions
+
+ETCDADDRESS="http://localhost:4001/"
+PORT="53"
+
+[ -f /etc/default/helixdns ] && . /etc/default/helixdns
+
+case "$1" in
+  start)
+	log_action_begin_msg "Starting Helixdns"
+	/usr/sbin/helixdns -etcd-address="$ETCDADDRESS" -port="$PORT" >/var/log/helixdns.log 2>&1 &
+	echo $! > /var/run/helixdns.pid
+	log_action_end_msg "$?"
+	;;
+  stop)
+	log_action_begin_msg "Stopping Helixdns"
+	kill $(cat /var/run/helixdns.pid)
+	rm /var/run/helixdns.pid
+	log_action_end_msg "$?"
+	;;
+  restart)
+	$SCRIPTNAME stop
+	$SCRIPTNAME start
+	;;
+  force-reload|status)
+	;;
+  *)
+	echo "Usage: $SCRIPTNAME start" >&2
+	exit 3
+	;;
+esac
+

@@ -1,0 +1,5 @@
+# etcd address
+#ETCDADDRESS="http://localhost:4001"
+
+# Port on which to listen
+#PORT=53

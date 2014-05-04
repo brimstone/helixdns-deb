@@ -1,0 +1,10 @@
+{
+	"default": {
+		"box": "ubuntu-14.04-amd64"
+	},
+	"alpha": {
+		"commands": [
+			"/vagrant/build dev"
+		]
+	}
+}
